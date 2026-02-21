@@ -7,8 +7,8 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        BigInteger result1 = solve("input.json");
-        BigInteger result2 = solve("input1.json");
+        BigInteger result1 = solve("input1.json");
+        BigInteger result2 = solve("input2.json");
 
         System.out.println("Output for Test Case 1:");
         System.out.println(result1);
