@@ -1,60 +1,70 @@
-import java.io.*;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import org.json.JSONObject;
+import java.util.*;
 
 public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        // Read JSON file
-        String content = new String(Files.readAllBytes(Paths.get("input.json")));
-        JSONObject obj = new JSONObject(content);
+        BigInteger result1 = solve("input.json");
+        BigInteger result2 = solve("input1.json");
 
-        JSONObject keys = obj.getJSONObject("keys");
-        int k = keys.getInt("k");
+        System.out.println("Output for Test Case 1:");
+        System.out.println(result1);
 
-        BigInteger[] x = new BigInteger[k];
-        BigInteger[] y = new BigInteger[k];
+        System.out.println("Output for Test Case 2:");
+        System.out.println(result2);
+    }
 
-        // IMPORTANT: Take roots from 1 to k exactly
-        for (int i = 1; i <= k; i++) {
+    public static BigInteger solve(String fileName) throws Exception {
 
-            String key = String.valueOf(i);
-            JSONObject root = obj.getJSONObject(key);
+        String content = new String(Files.readAllBytes(Paths.get(fileName)));
 
-            int base = Integer.parseInt(root.getString("base"));
-            String value = root.getString("value");
+        int k = Integer.parseInt(content.split("\"k\":")[1].split("[^0-9]")[0]);
 
-            x[i - 1] = new BigInteger(key);
-            y[i - 1] = new BigInteger(value, base);
+        List<BigInteger> xList = new ArrayList<>();
+        List<BigInteger> yList = new ArrayList<>();
+
+        for (int i = 1; xList.size() < k; i++) {
+
+            if (!content.contains("\"" + i + "\"")) continue;
+
+            String block = content.split("\"" + i + "\"")[1];
+
+            String baseStr = block.split("\"base\":")[1].split("\"")[1];
+            String valueStr = block.split("\"value\":")[1].split("\"")[1];
+
+            int base = Integer.parseInt(baseStr);
+
+            xList.add(BigInteger.valueOf(i));
+            yList.add(new BigInteger(valueStr, base));
         }
 
-        // Lagrange interpolation at x = 0
-        BigInteger secret = BigInteger.ZERO;
+        BigInteger[] x = xList.toArray(new BigInteger[0]);
+        BigInteger[] y = yList.toArray(new BigInteger[0]);
+
+        return lagrangeAtZero(x, y, k);
+    }
+
+    public static BigInteger lagrangeAtZero(BigInteger[] x, BigInteger[] y, int k) {
+
+        BigInteger result = BigInteger.ZERO;
 
         for (int i = 0; i < k; i++) {
 
-            BigInteger numerator = BigInteger.ONE;
-            BigInteger denominator = BigInteger.ONE;
+            BigInteger term = y[i];
 
             for (int j = 0; j < k; j++) {
                 if (i != j) {
-                    numerator = numerator.multiply(x[j].negate());
-                    denominator = denominator.multiply(x[i].subtract(x[j]));
+                    term = term.multiply(x[j].negate())
+                               .divide(x[i].subtract(x[j]));
                 }
             }
 
-            // Multiply first, divide only once
-            BigInteger term = y[i].multiply(numerator);
-
-            // Ensure exact division
-            term = term.divide(denominator);
-
-            secret = secret.add(term);
+            result = result.add(term);
         }
 
-        System.out.println("Secret: " + secret);
+        return result;
     }
 }
